@@ -5,12 +5,19 @@ used to mock an external service. Tests can use setup mock
 responses, then verify the requests were made and with the
 correct data. Mockit then be reset ready for the next tests. 
 
-## Usage
+## Usage 
 
-Run the mockit service, optionally setting a port number (default: 8080)
-
+The easiest and recommended way to use mockit is using docker.
 ```
-mockit --port 8080 
+docker run -p 8080:8080 snarechops/mockit
+```
+or with compose
+```
+services:
+    mockit:
+        image: snarechops/mockit
+        ports:
+            - 8080:8080
 ```
 
 To create a mock response
