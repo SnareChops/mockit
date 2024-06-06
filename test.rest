@@ -1,0 +1,19 @@
+POST http://localhost:8080/mockit/routes
+Content-Type: application/json
+
+{
+    "path": "/test",
+    "method": "GET",
+    "status": 200,
+    "body": "Hello Mockit",
+    "once": true
+}
+
+###
+GET http://localhost:8080/test
+
+###
+GET http://localhost:8080/mockit/requests
+
+###
+POST http://localhost:8080/mockit/clear

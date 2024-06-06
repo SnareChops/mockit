@@ -1,25 +1,42 @@
 # Mockit
 
-An extremely simple mocking webservice. Designed for use in call-and-response testing scenarios. Create a json or yaml file containing the routes and responses to mock.
+An extremely simple mocking webservice. Designed for use in call-and-response testing scenarios. In e2e tests this can be
+used to mock an external service. Tests can use setup mock
+responses, then verify the requests were made and with the
+correct data. Mockit then be reset ready for the next tests. 
 
 ## Usage
 
-To run the mock service, pass a mock json or yaml file.
-Optionally set the port number (default: 8080)
+Run the mockit service, optionally setting a port number (default: 8080)
 
 ```
-mockit --port 8080 mocks.json
+mockit --port 8080 
 ```
 
-## Mocks
-
-In a json or yaml file, create a list of mocks for the service.
-
+To create a mock response
 ```
-[{
+POST http://localhost:8080/mockit/routes
+Content-Type: application/json
+
+{
     "path": "/test",
     "method": "GET",
     "status": 200,
-    "body": "Test response"
-}]
+    "body": "Hello Mockit",
+    "once": true
+}
+```
+Now the defined endpoint can be called, and will receive the specified response
+```
+GET http://localhost:8080/test 
+
+=> 200 "Hello Mockit"
+```
+To Verify if a request has been made, and details about that request
+```
+GET http://localhost:8080/mockit/requests
+```
+To reset mockit back to a clean state use
+```
+POST http://localhost:8080/mockit/clear
 ```
