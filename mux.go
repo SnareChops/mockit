@@ -4,20 +4,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
 type handler struct {
-	once bool
-	fn   http.HandlerFunc
+	route FakeRoute
+	fn    http.HandlerFunc
 }
 
 type Handler struct {
-	routes map[string]handler
-	logged []Logged
+	routes   map[string]handler
+	logged   []Logged
+	upgrader websocket.Upgrader
+	conns    []*websocket.Conn
 }
 
 func NewHandler() *Handler {
-	return &Handler{routes: map[string]handler{}}
+	return &Handler{
+		routes: map[string]handler{},
+		upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool { return true },
+		},
+	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -33,10 +42,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.requests(w, r)
 		return
 	}
+	if r.URL.Path == "/mockit/ws" && r.Method == http.MethodGet {
+		h.upgradeWebsocket(w, r)
+		return
+	}
 	key := r.Method + "|" + r.URL.Path
 	if route, ok := h.routes[key]; ok {
 		route.fn(w, r)
-		if route.once {
+		h.broadcast("called", route.route)
+		if route.route.Once {
 			debug("'once' route used, removing.", r.Method, r.URL.Path)
 			delete(h.routes, key)
 		}
@@ -79,7 +93,7 @@ func (h *Handler) requests(w http.ResponseWriter, _ *http.Request) {
 
 func (h *Handler) handler(route FakeRoute) handler {
 	return handler{
-		once: route.Once,
+		route: route,
 		fn: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			trace("Mock request received", route.Method, route.Path)
 			h.logged = append(h.logged, NewLoggedRequest(r, route.Status, route.Body))
@@ -88,6 +102,27 @@ func (h *Handler) handler(route FakeRoute) handler {
 			w.Write(body)
 			debug("Sending mock response", route.Status, string(body))
 		}),
+	}
+}
+
+func (h *Handler) upgradeWebsocket(w http.ResponseWriter, r *http.Request) {
+	conn, err := h.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		debug("Failed to upgrade websocket", err.Error())
+		return
+	}
+	trace("websocket listener connected")
+	h.conns = append(h.conns, conn)
+	conn.WriteJSON(map[string]any{"type": "hello"})
+}
+
+func (h *Handler) broadcast(typ string, value any) {
+	for i, conn := range h.conns {
+		err := conn.WriteJSON(map[string]any{"type": typ, "value": value})
+		if err != nil {
+			debug("Failed to send websocket message:", err.Error())
+			h.conns = append(h.conns[:i], h.conns[i+1:]...)
+		}
 	}
 }
 
