@@ -5,7 +5,8 @@ Content-Type: application/json
     "path": "/test",
     "method": "GET",
     "status": 200,
-    "body": "Hello Mockit",
+    "type": "application/json",
+    "body": "{\"hello\": \"mockit\"}",
     "once": true
 }
 

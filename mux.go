@@ -97,6 +97,7 @@ func (h *Handler) handler(route FakeRoute) handler {
 		fn: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			trace("Mock request received", route.Method, route.Path)
 			h.logged = append(h.logged, NewLoggedRequest(r, route.Status, route.Body))
+			w.Header().Add("Content-Type", route.Type)
 			w.WriteHeader(route.Status)
 			body := prepareBody(route.Body)
 			w.Write(body)

@@ -9,6 +9,7 @@ type FakeRoute struct {
 	Path   string `json:"path"`
 	Method string `json:"method"`
 	Status int    `json:"status"`
+	Type   string `json:"type"`
 	Body   any    `json:"body"`
 	Once   bool   `json:"once"`
 }
