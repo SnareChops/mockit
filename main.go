@@ -3,34 +3,42 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 )
 
 var port string
+var traceEnabled bool
+var debugEnabled bool
 
 func init() {
 	flag.StringVar(&port, "port", "8080", "port to listen on")
+	flag.BoolVar(&traceEnabled, "trace", false, "enable trace logging")
+	flag.BoolVar(&debugEnabled, "debug", false, "enable debug logging")
 	flag.Parse()
 }
 
 func main() {
 	fmt.Println("Mockit server listening on port: ", port)
+	if traceEnabled {
+		fmt.Println("trace logging enabled")
+	}
+	if debugEnabled {
+		fmt.Println("debug logging enabled")
+	}
 	if err := http.ListenAndServe(":"+port, NewHandler()); err != nil {
 		panic(err)
 	}
 }
 
-// func load(path string) (routes []FakeRoute, err error) {
-// 	file, err := os.Open(path)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if strings.HasSuffix(path, ".json") {
-// 		err = json.NewDecoder(file).Decode(&routes)
-// 	} else if strings.HasSuffix(path, ".yaml") {
-// 		err = yaml.NewDecoder(file).Decode(&routes)
-// 	} else {
-// 		err = errors.New("unsupported file format")
-// 	}
-// 	return
-// }
+func trace(values ...any) {
+	if traceEnabled || debugEnabled {
+		log.Println(values...)
+	}
+}
+
+func debug(values ...any) {
+	if debugEnabled {
+		log.Println(values...)
+	}
+}

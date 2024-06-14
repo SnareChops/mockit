@@ -6,13 +6,18 @@ import (
 	"net/http"
 )
 
+type handler struct {
+	once bool
+	fn   http.HandlerFunc
+}
+
 type Handler struct {
-	routes map[string]http.HandlerFunc
+	routes map[string]handler
 	logged []Logged
 }
 
 func NewHandler() *Handler {
-	return &Handler{routes: map[string]http.HandlerFunc{}}
+	return &Handler{routes: map[string]handler{}}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -29,11 +34,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := r.Method + "|" + r.URL.Path
-	if handler, ok := h.routes[key]; ok {
-		handler(w, r)
-		delete(h.routes, key)
+	if route, ok := h.routes[key]; ok {
+		route.fn(w, r)
+		if route.once {
+			debug("'once' route used, removing.", r.Method, r.URL.Path)
+			delete(h.routes, key)
+		}
 		return
 	}
+	trace("Unknown request received", r.Method, r.URL.Path)
 	http.NotFound(w, r)
 }
 
@@ -41,34 +50,45 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	var route FakeRoute
 	err := json.NewDecoder(r.Body).Decode(&route)
 	if err != nil {
+		debug("Failed to decode mock route", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	h.routes[route.Method+"|"+route.Path] = h.handler(route)
 	w.WriteHeader(http.StatusCreated)
+	trace("Mock route created", route.Method, route.Path, "once:", route.Once)
 }
 
 func (h *Handler) clear(w http.ResponseWriter, _ *http.Request) {
-	h.routes = map[string]http.HandlerFunc{}
+	h.routes = map[string]handler{}
 	h.logged = []Logged{}
 	w.WriteHeader(http.StatusNoContent)
+	trace("Mocks and requests cleared!")
 }
 
 func (h *Handler) requests(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(h.logged)
 	if err != nil {
+		debug("Failed to encode requests", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	trace("Request history requested")
 }
 
-func (h *Handler) handler(route FakeRoute) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.logged = append(h.logged, NewLoggedRequest(r, route.Status, route.Body))
-		w.WriteHeader(route.Status)
-		w.Write(prepareBody(route.Body))
-	})
+func (h *Handler) handler(route FakeRoute) handler {
+	return handler{
+		once: route.Once,
+		fn: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			trace("Mock request received", route.Method, route.Path)
+			h.logged = append(h.logged, NewLoggedRequest(r, route.Status, route.Body))
+			w.WriteHeader(route.Status)
+			body := prepareBody(route.Body)
+			w.Write(body)
+			debug("Sending mock response", route.Status, string(body))
+		}),
+	}
 }
 
 func prepareBody(body any) (result []byte) {
