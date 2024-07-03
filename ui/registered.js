@@ -1,4 +1,4 @@
-import { Element } from './element.js'
+import { Element, button, div, h2 } from './element.js'
 import { formatBody } from './format.js'
 import { blankMessage } from './blank.js'
 
@@ -81,34 +81,32 @@ function render() {
  */
 function createRegisteredRouteElement(route) {
   const id = crypto.randomUUID()
-  return new Element('div')
-    .class('accordion-item')
-    .append(
-      new Element('h2')
-        .class('accordion-header')
-        .append(
-          new Element('button')
-            .class('accordion-button collapsed')
-            .attr('type', 'button')
-            .attr('data-bs-toggle', 'collapse')
-            .attr('data-bs-target', `#${id}`)
-            .text(`${route.method} ${route.path}`)
-        )
+  return div(
+    { class: 'accordion-item' },
+    h2(
+      { class: 'accordion-header' },
+      button(
+        {
+          class: 'accordion-button collapsed',
+          type: 'button',
+          'data-bs-toggle': 'collapse',
+          'data-bs-target': `#${id}`,
+        },
+        `${route.method} ${route.path}`
+      )
+    ),
+    div(
+      {
+        id,
+        class: 'accordion-collapse collapse',
+        'data-bs-parent': '#registered-routes',
+      },
+      div(
+        { class: 'accordion-body' },
+        `Status Code: ${route.status}\nContent-Type: ${
+          route.type
+        }\n\n${formatBody(route.body)}`
+      )
     )
-    .append(
-      new Element('div')
-        .id(id)
-        .class('accordion-collapse collapse')
-        .attr('data-bs-parent', '#registered-routes')
-        .append(
-          new Element('div')
-            .class('accordion-body')
-            .text(
-              `Status Code: ${route.status}\nContent-Type: ${
-                route.type
-              }\n\n${formatBody(route.body)}`
-            )
-        )
-    )
-    .el()
+  ).el()
 }

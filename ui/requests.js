@@ -1,6 +1,6 @@
-import { Element } from './element.js'
-import { formatBody } from './format.js'
 import { blankMessage } from './blank.js'
+import { b, button, div, h2, nbsp } from './element.js'
+import { formatBody } from './format.js'
 
 /**
  * @typedef LoggedRequest
@@ -60,51 +60,40 @@ function render() {
  */
 function createRequestElement(req) {
   const id = crypto.randomUUID()
-  return new Element('div')
-    .class('accordion-item')
-    .append(
-      new Element('h2')
-        .class('accordion-header')
-        .append(
-          new Element('button')
-            .class('accordion-button collapsed')
-            .attr('type', 'button')
-            .attr('data-bs-toggle', 'collapse')
-            .attr('data-bs-target', `#${id}`)
-            .text(`${req.status} ${req.method} ${req.path}`)
+  return div(
+    { class: 'accordion-item' },
+    h2(
+      { class: 'accordion-header' },
+      button(
+        {
+          class: 'accordion-button collapsed',
+          type: 'button',
+          'data-bs-toggle': 'collapse',
+          'data-bs-target': `#${id}`,
+        },
+        b(req.status.toString()),
+        nbsp(),
+        `${req.method} ${req.path}`
+      )
+    ),
+    div(
+      {
+        id,
+        class: 'accordion-collapse collapse',
+        'data-bs-parent': '#requests',
+      },
+      div(
+        { class: 'accordion-body container' },
+        div({ class: 'row' }, `Query Params:\n${formatQuery(req.query)}`),
+        document.createElement('hr'),
+        div(
+          { class: 'row' },
+          div({ class: 'col' }, `Request:\n\n${formatBody(req.req)}`),
+          div({ class: 'col' }, `Response:\n\n${formatBody(req.res)}`)
         )
+      )
     )
-    .append(
-      new Element('div')
-        .id(id)
-        .class('accordion-collapse collapse')
-        .attr('data-bs-parent', '#requests')
-        .append(
-          new Element('div')
-            .class('accordion-body container')
-            .append(
-              new Element('div')
-                .class('request-common row')
-                .text(`Query Params:\n${formatQuery(req.query)}`)
-            )
-            .append(document.createElement('hr'))
-            .append(
-              new Element('div')
-                .class('row')
-                .append(
-                  new Element('div')
-                    .class('col')
-                    .text(`Request:\n\n${formatBody(req.req)}`)
-                )
-                .append(
-                  new Element('div')
-                    .class('col')
-                    .text(`Response:\n\n${formatBody(req.res)}`)
-                )
-            )
-        )
-    )
-    .el()
+  ).el()
 }
 
 function formatQuery(query) {
