@@ -28,6 +28,11 @@ GET http://localhost:8080/test?h=1
 
 ###
 POST http://localhost:8080/other 
+Content-type: application/json
+
+{
+    "test": "body"
+}
 
 ###
 GET http://localhost:8080/mockit/requests

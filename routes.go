@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
+	"slices"
 )
 
 type FakeRoute struct {
@@ -24,12 +27,28 @@ type Logged struct {
 }
 
 func NewLoggedRequest(r *http.Request, status int, body any) Logged {
+	reqBody, _ := parseBody(r.Header["Content-Type"], r.Body)
 	return Logged{
 		Path:   r.URL.Path,
 		Method: r.Method,
 		Query:  r.URL.Query(),
 		Status: status,
-		Req:    r.Body,
+		Req:    reqBody,
 		Res:    body,
 	}
+}
+
+func parseBody(contentType []string, body io.ReadCloser) (result any, err error) {
+	if slices.Contains(contentType, "application/json") {
+		err = json.NewDecoder(body).Decode(&result)
+		return
+	}
+	// Treat as a string by default
+	var b []byte
+	b, err = io.ReadAll(body)
+	if err != nil {
+		return
+	}
+	result = string(b)
+	return
 }
