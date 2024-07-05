@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -139,6 +140,8 @@ func (h *Handler) handler(route FakeRoute) handler {
 	}
 }
 
+var mu sync.Mutex
+
 func (h *Handler) upgradeWebsocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -147,12 +150,16 @@ func (h *Handler) upgradeWebsocket(w http.ResponseWriter, r *http.Request) {
 	}
 	trace("websocket listener connected")
 	h.conns = append(h.conns, conn)
+	mu.Lock()
 	conn.WriteJSON(map[string]any{"type": "hello"})
+	mu.Unlock()
 }
 
 var id = 0
 
 func (h *Handler) broadcast(typ string, value any) {
+	mu.Lock()
+	defer mu.Unlock()
 	id++
 	for i, conn := range h.conns {
 		err := conn.WriteJSON(map[string]any{"id": id, "type": typ, "value": value})
