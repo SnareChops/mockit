@@ -224,6 +224,12 @@ export function button(...args) {
 export function h2(...args) {
   return new Element('h2', ...args)
 }
+export function br(...args){
+  return new Element('br', ...args)
+}
+export function strong(...args){
+  return new Element('strong', ...args)
+}
 export function nbsp() {
   return document.createTextNode(String.fromCharCode(160))
 }

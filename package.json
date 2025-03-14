@@ -1,0 +1,12 @@
+{
+  "name": "@snarechops/mockit",
+  "version": "0.0.7",
+  "description": "An extremely simple mocking webservice. Designed for use in call-and-response testing scenarios.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "github.com/SnareChops/mockit",
+  "author": "SnareChops",
+  "license": "MIT"
+}

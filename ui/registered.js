@@ -1,4 +1,4 @@
-import { Element, button, div, h2 } from './element.js'
+import { Element, br, button, div, h2, p, span, strong } from './element.js'
 import { formatBody } from './format.js'
 import { blankMessage } from './blank.js'
 
@@ -103,9 +103,9 @@ function createRegisteredRouteElement(route) {
       },
       div(
         { class: 'accordion-body' },
-        `Status Code: ${route.status}\nContent-Type: ${
-          route.type
-        }\n\n${formatBody(route.body)}`
+        p(strong('Status Code:'), ' '+route.status),
+        p(strong('Content-Type:'), ' '+ route.type),
+        p(strong('Response:'), br(), formatBody(route.body))
       )
     )
   ).el()

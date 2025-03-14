@@ -1,5 +1,5 @@
 import { blankMessage } from './blank.js'
-import { b, button, div, h2, nbsp } from './element.js'
+import { b, br, button, div, h2, nbsp, p, strong } from './element.js'
 import { formatBody } from './format.js'
 
 /**
@@ -84,23 +84,31 @@ function createRequestElement(req) {
       },
       div(
         { class: 'accordion-body container' },
-        div({ class: 'row' }, `Query Params:\n${formatQuery(req.query)}`),
+        div(
+          { class: 'row' }, 
+          p(strong('Query Params:')),
+          ...formatQuery(req.query),
+        ),
         document.createElement('hr'),
         div(
           { class: 'row' },
-          div({ class: 'col' }, `Request:\n\n${formatBody(req.req)}`),
-          div({ class: 'col' }, `Response:\n\n${formatBody(req.res)}`)
+          div(strong('Request:'), br(), formatBody(req.req)),
+          div(strong('Response:'),br(), formatBody(req.res)),
         )
       )
     )
   ).el()
 }
 
+/**
+ * @param {Map<string, string[]>} query
+ * @returns {import('./element.js').Element[]}
+ */
 function formatQuery(query) {
-  let result = ''
+  const result = []
   for (const key in query) {
     for (const val of query[key]) {
-      result += key + ' = ' + val + '\n'
+      result.push(p(strong(key), '='+val))
     }
   }
   return result

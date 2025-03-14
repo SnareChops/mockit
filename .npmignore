@@ -1,0 +1,6 @@
+/ui
+Dockerfile
+go.mod
+go.sum
+*.go
+*.rest
